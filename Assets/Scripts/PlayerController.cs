@@ -7,14 +7,18 @@ public class PlayerController : MonoBehaviour
 	public float speed = 40;
 	private Rigidbody rigidbody;
 
-	private float walkX;
-	private float walkZ;
-	public float deceleration = 5f;
+	private Camera camera;
+
+	//Deceleration and damping variables, for SmoothDamp
+	private Vector3 dampingHz;
+	private Vector3 dampingVt;
+	private float deceleration = 0.1f; //time in seconds to come to a stop
 
     // Start is called before the first frame update
     void Start()
     {
 		rigidbody = GetComponent<Rigidbody>();
+		camera = Camera.main;
     }
 
     // Update is called once per frame
@@ -25,19 +29,49 @@ public class PlayerController : MonoBehaviour
 
 	private void FixedUpdate()
 	{
+		//Get input, and the total movement vector
 		float horizontalInput = Input.GetAxisRaw("Horizontal");
 		float verticalInput = Input.GetAxisRaw("Vertical");
+		Vector3 movement = new Vector3(horizontalInput, 0, verticalInput);
 
-		rigidbody.AddForce(new Vector3(horizontalInput, 0, verticalInput) * speed * 100, ForceMode.Force);
+		//Rotate to face the direction of the view, and make movement vector relative to view
+		Vector3 camPos = new Vector3(camera.transform.position.x, transform.position.y, camera.transform.position.z);
+		Vector3 diff = camPos - transform.position;
+		transform.forward = -diff;
+		Vector3 move = transform.TransformDirection(movement);
+
+		//Add final force to movement
+		rigidbody.AddForce(move * speed * 100);
 
 		//Arrest movement in direction the player isn't trying to move
 		if (horizontalInput == 0)
 		{
-			rigidbody.velocity = new Vector3(Mathf.SmoothDamp(rigidbody.velocity.x, 0, ref walkX, deceleration), rigidbody.velocity.y, rigidbody.velocity.z);
+			Vector3 velocity = rigidbody.velocity;
+			rigidbody.velocity = Vector3.SmoothDamp(velocity, Vector3.Project(velocity, transform.forward), ref dampingHz, deceleration);
 		}
 		if (verticalInput == 0)
 		{
-			rigidbody.velocity = new Vector3(rigidbody.velocity.x, rigidbody.velocity.y, Mathf.SmoothDamp(rigidbody.velocity.z, 0, ref walkZ, deceleration));
+			Vector3 velocity = rigidbody.velocity;
+			rigidbody.velocity = Vector3.SmoothDamp(velocity, Vector3.Project(velocity, transform.right), ref dampingVt, deceleration);
 		}
+	}
+
+	private void LateUpdate()
+	{
+		//Rotate camera with mouse
+		//TODO: Clamp mouse, hide mouse
+		float mouseX = Input.GetAxis("Mouse X");
+		camera.transform.position = transform.position;
+		camera.transform.Translate(new Vector3(0, 1, -3.75f));
+		camera.transform.RotateAround(transform.position, transform.up, mouseX * 4f);
+	}
+
+	private void OnGUI()
+	{
+		/*
+		Debug.DrawRay(transform.position, rigidbody.velocity, Color.black, 0.5f);
+		Debug.DrawRay(transform.position, Vector3.Project(rigidbody.velocity, transform.forward), Color.blue, 0.5f);
+		Debug.DrawRay(transform.position, Vector3.Project(rigidbody.velocity, transform.right), Color.red, 0.5f);
+		*/
 	}
 }
