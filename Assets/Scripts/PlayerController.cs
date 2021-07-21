@@ -21,12 +21,6 @@ public class PlayerController : MonoBehaviour
 		camera = Camera.main;
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-		
-    }
-
 	private void FixedUpdate()
 	{
 		//Get input, and the total movement vector

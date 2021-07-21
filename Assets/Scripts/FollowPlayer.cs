@@ -14,12 +14,6 @@ public class FollowPlayer : MonoBehaviour
 		rotation = transform.rotation.eulerAngles.y;
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-		
-    }
-
 	private void LateUpdate()
 	{
 		Vector3 playerPos = player.transform.position;

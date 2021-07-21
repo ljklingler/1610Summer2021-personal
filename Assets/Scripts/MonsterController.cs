@@ -6,14 +6,27 @@ using UnityEngine.AI;
 public class MonsterController : MonoBehaviour
 {
 	NavMeshAgent agent;
+	private float speed;
 	public Transform target;
 	public GameObject player;
+
+	public float normalSightArc;
+	private float sightArc;
+	public Vector3 headPosition;
+
+	private bool aggressive = false;
+	private float timeStopped;
 
     // Start is called before the first frame update
     void Start()
     {
 		agent = GetComponent<NavMeshAgent>();
-    }
+		sightArc = AdjustedSightArc();
+		timeStopped = 0f;
+
+		StartCoroutine(SpotPlayer());
+		StartCoroutine(Move());
+	}
 
     // Update is called once per frame
     void Update()
@@ -22,55 +35,107 @@ public class MonsterController : MonoBehaviour
 		{
 			agent.destination = player.transform.position;
 		}
-    }
+	}
 
-	//This is all temporary and gross but it's late and I don't want to move it right now
-	//TODO or whatever
-	private void OnGUI()
+	float AdjustedSightArc()
 	{
-		float f = 0.01f;
-		float halfAngle = 40f;
+		float s = aggressive ? normalSightArc + 40 : normalSightArc; //wider while aggro
+		s *= aggressive && timeStopped > 0 ? 1.5f : 1f; //slightly wider if standing still
+		return s;
+	}
 
-		//Set the 'head' position, and draw the forward
-		Vector3 origin = transform.position + Vector3.up * 2;
-		Debug.DrawRay(origin, transform.forward * 4f, Color.red, f);
+	float AdjustedSpeed()
+	{
+		return aggressive ? 5f : 3.5f;
+	}
 
-		//Get closest point on player's collider
-		Collider collider = player.GetComponent<Collider>();
-		Vector3 closest = collider.ClosestPoint(origin);
-		RaycastHit hit;
-		
-		//Check if the sight line to the player is clear
-		if (Physics.Linecast(origin, closest, out hit, LayerMask.NameToLayer("Player"), QueryTriggerInteraction.Ignore))
+	IEnumerator Move()
+	{
+		while (true)
 		{
-			//Show where the obstacle is
-			Debug.DrawLine(origin, hit.point, Color.blue, f);
-			Debug.DrawLine(hit.point, closest, Color.red, f);
-		}
-		else
-		{
-			//Get direction to the player, and the angle of difference
-			Vector3 dirToPlayer = (closest - origin).normalized;
-			float diff = Vector3.Angle(transform.forward, dirToPlayer);
+			agent.speed = AdjustedSpeed();
 
-			//Check if angle is in view or not
-			if (diff < halfAngle)
+			if (!aggressive)
 			{
-				//It's in view! Move to that position
-				Debug.DrawLine(origin, closest, Color.green, f);
-				agent.destination = player.transform.position;
-
-				//increase sight cone while traveling
-				//further increase it if arrive at position and they haven't hit the player
-				//also increase speed
+				
+				//patrol
 			}
 			else
 			{
-				//It's not in view, so the player is safe
-				Debug.DrawLine(origin, closest, Color.yellow, f);
-
-				//Continue along 'patrol'
+				//suspend patrol
 			}
+
+			yield return null;
+		}
+	}
+
+	IEnumerator SpotPlayer()
+	{
+		Collider collider = player.GetComponent<Collider>();
+		float debugDrawTime = 0.01f;
+
+		while (true)
+		{
+			//Get important positions
+			Vector3 origin = transform.position + headPosition;
+			Vector3 closest = collider.ClosestPoint(origin);
+
+			//Adjust sight arc (based on aggression, movement)
+			sightArc = AdjustedSightArc();
+			
+			//Debug draw sight cone
+			Debug.DrawRay(origin, transform.forward * 4f, Color.red, debugDrawTime);
+			Vector3 left = Quaternion.Euler(0, -sightArc / 2, 0) * transform.forward;
+			Debug.DrawRay(origin, left * 40f, Color.grey, debugDrawTime);
+			Vector3 right = Quaternion.Euler(0, sightArc / 2, 0) * transform.forward;
+			Debug.DrawRay(origin, right * 40f, Color.grey, debugDrawTime);
+
+			//Is there a clear line between the head and the target?
+			if (Physics.Linecast(origin, closest, out RaycastHit hit, LayerMask.NameToLayer("Player"), QueryTriggerInteraction.Ignore))
+			{
+				//Nope, blocked.
+				Debug.DrawLine(origin, hit.point, Color.blue, debugDrawTime);
+				Debug.DrawLine(hit.point, closest, Color.red, debugDrawTime);
+			}
+			else
+			{
+				//Clear line.
+				//Get direction to target
+				Vector3 directionToTarget = (closest - origin).normalized;
+				float diff = Vector3.Angle(transform.forward, directionToTarget);
+
+				//Is the target within sight cone?
+				if (diff < sightArc / 2)
+				{
+					//Target is visible. Become aggressive, move to target.
+					Debug.DrawLine(origin, closest, Color.green, debugDrawTime);
+					aggressive = true;
+					agent.destination = player.transform.position;
+				}
+				else
+				{
+					//Target isn't visible.
+					Debug.DrawLine(origin, closest, Color.yellow, debugDrawTime);
+				}
+			}
+
+			//Increment timeStopped while stationary, else reset it.
+			if (agent.remainingDistance < 0.05f)
+			{
+				timeStopped += Time.deltaTime;
+			}
+			else
+			{
+				timeStopped = 0;
+			}
+
+			//If aggro and doesn't see anyone for a while, stop being aggro.
+			if (aggressive && timeStopped > 3f)
+			{
+				aggressive = false;
+			}
+
+			yield return null;
 		}
 	}
 }
