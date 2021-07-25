@@ -60,12 +60,12 @@ public class PlayerController : MonoBehaviour
 		camera.transform.RotateAround(transform.position, transform.up, mouseX * 4f);
 	}
 
-	private void OnGUI()
+	private void OnTriggerEnter(Collider other)
 	{
-		/*
-		Debug.DrawRay(transform.position, rigidbody.velocity, Color.black, 0.5f);
-		Debug.DrawRay(transform.position, Vector3.Project(rigidbody.velocity, transform.forward), Color.blue, 0.5f);
-		Debug.DrawRay(transform.position, Vector3.Project(rigidbody.velocity, transform.right), Color.red, 0.5f);
-		*/
+		if (other.CompareTag("Monster"))
+		{
+			Debug.Log("Death");
+			Destroy(gameObject);
+		}
 	}
 }

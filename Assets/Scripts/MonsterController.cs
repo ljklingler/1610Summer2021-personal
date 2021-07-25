@@ -57,7 +57,6 @@ public class MonsterController : MonoBehaviour
 
 			if (!aggressive)
 			{
-				
 				//patrol
 			}
 			else
