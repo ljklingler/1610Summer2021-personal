@@ -165,7 +165,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5622257532623db43be14d65370790d8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  target: {fileID: 0}
   player: {fileID: 0}
   normalSightArc: 80
   headPosition: {x: 0, y: 2.25, z: 0}

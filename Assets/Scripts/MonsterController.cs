@@ -15,6 +15,7 @@ public class MonsterController : MonoBehaviour
 
 	private bool aggressive = false;
 	private float timeStopped;
+	private float timeAggro;
 
     // Start is called before the first frame update
     void Start()
@@ -23,6 +24,7 @@ public class MonsterController : MonoBehaviour
 		player = GameObject.Find("Player");
 		sightArc = AdjustedSightArc();
 		timeStopped = 0f;
+		timeAggro = 0f;
 
 		StartCoroutine(SpotPlayer());
 		StartCoroutine(Move());
@@ -40,7 +42,7 @@ public class MonsterController : MonoBehaviour
 	float AdjustedSightArc()
 	{
 		float s = aggressive ? normalSightArc + 40 : normalSightArc; //wider while aggro
-		s *= aggressive && timeStopped > 0 ? 1.5f : 1f; //slightly wider if standing still
+		s *= aggressive && timeStopped > 0 ? 2f : 1f; //slightly wider if standing still
 		return s;
 	}
 
@@ -62,6 +64,13 @@ public class MonsterController : MonoBehaviour
 			else
 			{
 				//suspend patrol
+
+				//Get faster over time to a cap
+				timeAggro += Time.deltaTime;
+				if (timeAggro > 2f)
+				{
+					agent.speed += Mathf.Min(2f - timeAggro, 2f);
+				}
 			}
 
 			yield return null;

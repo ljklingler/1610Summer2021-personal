@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class SpawnManager : MonoBehaviour
 {
+	public GameObject spawnPoint;
 	public GameObject enemyPrefab;
 
 	public bool playerAlive;
@@ -12,6 +13,6 @@ public class SpawnManager : MonoBehaviour
 	{
 		playerAlive = true;
 
-		Instantiate(enemyPrefab, Vector3.forward * 2.27f, enemyPrefab.transform.rotation);
+		Instantiate(enemyPrefab, spawnPoint.transform.position, enemyPrefab.transform.rotation);
 	}
 }
