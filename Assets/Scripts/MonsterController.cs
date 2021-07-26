@@ -7,7 +7,6 @@ public class MonsterController : MonoBehaviour
 {
 	NavMeshAgent agent;
 	private float speed;
-	public Transform target;
 	public GameObject player;
 
 	public float normalSightArc;
@@ -21,6 +20,7 @@ public class MonsterController : MonoBehaviour
     void Start()
     {
 		agent = GetComponent<NavMeshAgent>();
+		player = GameObject.Find("Player");
 		sightArc = AdjustedSightArc();
 		timeStopped = 0f;
 
@@ -77,7 +77,7 @@ public class MonsterController : MonoBehaviour
 		{
 			//Get important positions
 			Vector3 origin = transform.position + headPosition;
-			Vector3 closest = collider.ClosestPoint(origin);
+			Vector3 closest = collider != null ? collider.ClosestPoint(origin) : Vector3.zero;
 
 			//Adjust sight arc (based on aggression, movement)
 			sightArc = AdjustedSightArc();

@@ -4,6 +4,8 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
+	private SpawnManager spawnManager;
+
 	public float speed = 40;
 	private Rigidbody rigidbody;
 
@@ -17,12 +19,18 @@ public class PlayerController : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+		spawnManager = GameObject.Find("SpawnManager").GetComponent<SpawnManager>();
 		rigidbody = GetComponent<Rigidbody>();
 		camera = Camera.main;
     }
 
 	private void FixedUpdate()
 	{
+		if (!spawnManager.playerAlive)
+		{
+			return;
+		}
+
 		//Get input, and the total movement vector
 		float horizontalInput = Input.GetAxisRaw("Horizontal");
 		float verticalInput = Input.GetAxisRaw("Vertical");
@@ -50,22 +58,37 @@ public class PlayerController : MonoBehaviour
 		}
 	}
 
-	private void LateUpdate()
-	{
-		//Rotate camera with mouse
-		//TODO: Clamp mouse, hide mouse
-		float mouseX = Input.GetAxis("Mouse X");
-		camera.transform.position = transform.position;
-		camera.transform.Translate(new Vector3(0, 1, -3.75f));
-		camera.transform.RotateAround(transform.position, transform.up, mouseX * 4f);
-	}
-
 	private void OnTriggerEnter(Collider other)
 	{
-		if (other.CompareTag("Monster"))
+		if (other.CompareTag("Monster") && spawnManager.playerAlive == true)
 		{
-			Debug.Log("Death");
-			Destroy(gameObject);
+			StartCoroutine(Die());
 		}
+	}
+
+	private void OnDestroy()
+	{
+		Debug.Log("Death");
+		spawnManager.playerAlive = false;
+	}
+
+	IEnumerator Die()
+	{
+		spawnManager.playerAlive = false;
+		rigidbody.velocity = Vector3.zero;
+		rigidbody.isKinematic = false;
+		float time = 0;
+		
+		while (time < 3)
+		{
+			time += Time.deltaTime;
+			float prog = Mathf.Lerp(0, 2, time / 3);
+			transform.position = new Vector3(transform.position.x, -prog, transform.position.z);
+			Debug.Log(prog);
+
+			yield return null;
+		}
+
+		Destroy(gameObject);
 	}
 }

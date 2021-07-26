@@ -4,28 +4,32 @@ using UnityEngine;
 
 public class FollowPlayer : MonoBehaviour
 {
-	public GameObject player;
-	private float rotation;
-	private Vector3 offset => new Vector3(0, 1, -3.75f);
+	private SpawnManager spawnManager;
 
-    // Start is called before the first frame update
+	public GameObject player;
+	private Vector3 offset => new Vector3(0, 1, -3.75f);
+	private Vector3 last;
+
     void Start()
     {
-		rotation = transform.rotation.eulerAngles.y;
+		spawnManager = GameObject.Find("SpawnManager").GetComponent<SpawnManager>();
     }
 
 	private void LateUpdate()
 	{
-		Vector3 playerPos = player.transform.position;
-		float mouseX = Input.GetAxis("Mouse X");
-		rotation += mouseX * 1.5f;
-		//transform.rotation = Quaternion.Euler(30, rotation, 0);
-		transform.position = playerPos;
-		transform.Translate(offset);
-		transform.RotateAround(playerPos, player.transform.up, mouseX * 4f);
-		//transform.position = new Vector3(playerPos.x, playerPos.y + 3, playerPos.z - 5.5f);
-
-
-		//transform.RotateAround(playerPos, Vector3.up, mouseX);
+		if (spawnManager.playerAlive == true)
+		{
+			//Rotate camera with mouse
+			//TODO: Clamp mouse, hide mouse
+			last = player.transform.position;
+			float mouseX = Input.GetAxis("Mouse X");
+			transform.position = last;
+			transform.Translate(offset);
+			transform.RotateAround(last, player.transform.up, mouseX * 4f);
+		}
+		else
+		{
+			transform.RotateAround(last, Vector3.up, 4f * Time.deltaTime);
+		}
 	}
 }
