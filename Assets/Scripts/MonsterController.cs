@@ -67,10 +67,7 @@ public class MonsterController : MonoBehaviour
 
 				//Get faster over time to a cap
 				timeAggro += Time.deltaTime;
-				if (timeAggro > 2f)
-				{
-					agent.speed += Mathf.Min(2f - timeAggro, 2f);
-				}
+				agent.speed += Mathf.Min(Mathf.Max(timeAggro - 3f, 0f), 6f);
 			}
 
 			yield return null;
@@ -141,6 +138,7 @@ public class MonsterController : MonoBehaviour
 			if (aggressive && timeStopped > 3f)
 			{
 				aggressive = false;
+				timeAggro = 0;
 			}
 
 			yield return null;
