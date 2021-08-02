@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
-	private SpawnManager spawnManager;
+	private GameManager gameManager;
 
 	public float speed = 40;
 	private Rigidbody rigidbody;
@@ -19,14 +19,14 @@ public class PlayerController : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-		spawnManager = GameObject.Find("SpawnManager").GetComponent<SpawnManager>();
+		gameManager = GameObject.Find("GameManager").GetComponent<GameManager>();
 		rigidbody = GetComponent<Rigidbody>();
 		camera = Camera.main;
     }
 
 	private void FixedUpdate()
 	{
-		if (!spawnManager.playerAlive)
+		if (!gameManager.isPlayerAlive)
 		{
 			return;
 		}
@@ -60,7 +60,12 @@ public class PlayerController : MonoBehaviour
 
 	private void OnTriggerEnter(Collider other)
 	{
-		if (other.CompareTag("Monster") && spawnManager.playerAlive == true)
+		if (other.CompareTag("Monster") && gameManager.isPlayerAlive == true)
+		{
+			StartCoroutine(Die());
+		}
+
+		if (other.CompareTag("Exit") && gameManager.isEscapePossible)
 		{
 			StartCoroutine(Die());
 		}
@@ -69,12 +74,12 @@ public class PlayerController : MonoBehaviour
 	private void OnDestroy()
 	{
 		Debug.Log("Death");
-		spawnManager.playerAlive = false;
+		gameManager.isPlayerAlive = false;
 	}
 
 	IEnumerator Die()
 	{
-		spawnManager.playerAlive = false;
+		gameManager.isPlayerAlive = false;
 		rigidbody.velocity = Vector3.zero;
 		rigidbody.isKinematic = false;
 		float time = 0;

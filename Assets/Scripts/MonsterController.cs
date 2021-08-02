@@ -2,12 +2,14 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
+using TMPro;
 
 public class MonsterController : MonoBehaviour
 {
 	NavMeshAgent agent;
 	private float speed;
 	public GameObject player;
+	private GameManager manager;
 
 	public float normalSightArc;
 	private float sightArc;
@@ -17,11 +19,13 @@ public class MonsterController : MonoBehaviour
 	private float timeStopped;
 	private float timeAggro;
 
+
     // Start is called before the first frame update
     void Start()
     {
 		agent = GetComponent<NavMeshAgent>();
 		player = GameObject.Find("Player");
+		manager = GameObject.Find("GameManager").GetComponent<GameManager>();
 		sightArc = AdjustedSightArc();
 		timeStopped = 0f;
 		timeAggro = 0f;
@@ -35,7 +39,10 @@ public class MonsterController : MonoBehaviour
     {
         if (Input.GetKeyUp(KeyCode.Space))
 		{
-			agent.destination = player.transform.position;
+			for (int i = 0; i < 15; i++)
+			{
+				RandomWalkPoint(out Vector3 point);
+			}
 		}
 	}
 
@@ -55,11 +62,18 @@ public class MonsterController : MonoBehaviour
 	{
 		while (true)
 		{
+			manager.isAnyMonsterAggressive = aggressive;
 			agent.speed = AdjustedSpeed();
+			Debug.DrawLine(transform.position, agent.destination, Color.red, 0.01f);
 
 			if (!aggressive)
 			{
+				
 				//patrol
+				if (timeStopped > 3f && RandomWalkPoint(out Vector3 point))
+				{
+					agent.destination = point;
+				}
 			}
 			else
 			{
@@ -89,7 +103,6 @@ public class MonsterController : MonoBehaviour
 			sightArc = AdjustedSightArc();
 			
 			//Debug draw sight cone
-			Debug.DrawRay(origin, transform.forward * 4f, Color.red, debugDrawTime);
 			Vector3 left = Quaternion.Euler(0, -sightArc / 2, 0) * transform.forward;
 			Debug.DrawRay(origin, left * 40f, Color.grey, debugDrawTime);
 			Vector3 right = Quaternion.Euler(0, sightArc / 2, 0) * transform.forward;
@@ -143,5 +156,26 @@ public class MonsterController : MonoBehaviour
 
 			yield return null;
 		}
+	}
+
+	bool RandomWalkPoint(out Vector3 result)
+	{
+		for (int i = 0; i < 10; i++)
+		{
+			var randDir = Random.insideUnitSphere;
+			var pointWithinRing = randDir.normalized * 3f + randDir * (40f - 3f);
+			Vector3 pos = new Vector3(transform.position.x + pointWithinRing.x, transform.position.y, transform.position.z + pointWithinRing.y);
+
+			NavMeshHit hit;
+			if (NavMesh.SamplePosition(pos, out hit, pos.magnitude, NavMesh.AllAreas))
+			{
+				Debug.DrawLine(transform.position, pos, Color.magenta, 2f);
+				Debug.DrawLine(transform.position, hit.position, Color.cyan, 2f);
+				result = hit.position;
+				return true;
+			}
+		}
+		result = Vector3.zero;
+		return false;
 	}
 }
